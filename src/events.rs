@@ -88,14 +88,16 @@ fn random_event<R: Rng>(events: &Events, rng: &mut R) -> (String, Value) {
     (rand_key.to_string(), json!(payload))
 }
 
-/// A method to generate the same event everytime this is called. Used to demonstrate events must be unique.
+/// Inserts event with fixed values. Used to demonstrate events must be unique.
 pub fn insert_fixed_event(
     db_client: &mut Client,
+    nonce: u32,
 ) -> Result<(String, Value), postgres::error::Error> {
     let mut payload = HashMap::new();
     let event_type = "mint_coins";
     payload.insert("amount", 100);
     payload.insert("account_id", 7);
+    payload.insert("nonce", nonce);
     let serialized_payload = json!(payload);
     insert_event(
         db_client,

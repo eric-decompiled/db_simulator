@@ -1,19 +1,15 @@
 extern crate db_simulator;
 use self::db_simulator::*;
-use crate::db::{establish_connection, init_tables};
-use crate::events::{insert_random_event, parse_type_map};
-use crate::utils::sleep_to_cadence;
-use dotenv::dotenv;
+use crate::events::insert_random_event;
+use crate::utils::{setup, sleep_to_cadence};
+use rand::thread_rng;
 use std::time::{Duration, SystemTime};
 
 /// Writes a random event into the DB every 5 seconds
 fn main() -> Result<(), std::io::Error> {
-    dotenv().ok();
-    let mut db_client = establish_connection();
-    init_tables(&mut db_client).expect("could not initialize tables");
-    let events = parse_type_map();
+    let (mut db_client, events) = setup();
+    let mut rng = thread_rng();
     let cadence = Duration::from_secs(5);
-    let mut rng = rand::thread_rng();
     loop {
         let start = SystemTime::now();
         match insert_random_event(&mut db_client, &events, &mut rng) {
@@ -25,4 +21,22 @@ fn main() -> Result<(), std::io::Error> {
         let exec_time = start.elapsed().expect("Could not get exec time");
         sleep_to_cadence(cadence, exec_time);
     }
+}
+
+#[test]
+fn check_insert() {
+    let (mut db_client, events) = setup();
+    let mut rng = rand::thread_rng();
+    let result = insert_random_event(&mut db_client, &events, &mut rng);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn check_unique() {
+    use rand::Rng;
+    let (mut db_client, _) = setup();
+    let mut rng = thread_rng();
+    let nonce = rng.gen();
+    assert!(events::insert_fixed_event(&mut db_client, nonce).is_ok());
+    assert!(events::insert_fixed_event(&mut db_client, nonce).is_err());
 }

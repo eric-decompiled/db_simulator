@@ -1,17 +1,13 @@
 extern crate db_simulator;
 use self::db_simulator::*;
-use crate::db::{establish_connection, init_tables, query_events};
-use crate::events::{parse_type_map, random_event_type};
-use crate::utils::{random_interval, sleep_to_cadence};
-use dotenv::dotenv;
+use crate::db::query_events;
+use crate::events::random_event_type;
+use crate::utils::{random_interval, setup, sleep_to_cadence};
 use std::time::{Duration, SystemTime};
 
 /// Queries the DB for a random event type between a random interval every 100 ms
 fn main() -> Result<(), std::io::Error> {
-    dotenv().ok();
-    let mut db_client = establish_connection();
-    init_tables(&mut db_client).expect("could not init tables");
-    let events = parse_type_map();
+    let (mut db_client, events) = setup();
     let mut rng = rand::thread_rng();
     let cadence = Duration::from_millis(100);
     loop {
@@ -32,5 +28,23 @@ fn main() -> Result<(), std::io::Error> {
         };
         let exec_time = start.elapsed().expect("Could not get elapsed time");
         sleep_to_cadence(cadence, exec_time);
+    }
+}
+
+#[test]
+fn check_reader() {
+    let (mut db_client, _) = setup();
+    let _ = events::insert_fixed_event(&mut db_client, 1);
+    let _ = events::insert_fixed_event(&mut db_client, 2);
+    let _ = events::insert_fixed_event(&mut db_client, 3);
+
+    match query_events(
+        &mut db_client,
+        "mint_coins",
+        SystemTime::UNIX_EPOCH,
+        SystemTime::UNIX_EPOCH + Duration::from_secs(1),
+    ) {
+        Ok(results) => assert!(results.len() >= 3, "should find at least 3 results"),
+        Err(_) => assert!(false, "query should not error"),
     }
 }

@@ -1,7 +1,20 @@
+use crate::db::{establish_connection, init_tables};
+use crate::events::{parse_type_map, Events};
+use dotenv::dotenv;
+use postgres::Client;
 use rand::Rng;
 use std::thread;
 use std::time::Duration;
 use std::time::SystemTime;
+
+/// returns a db client and parsed events
+pub fn setup() -> (Client, Events) {
+    dotenv().ok();
+    let mut db_client = establish_connection();
+    init_tables(&mut db_client).expect("could not initialize tables");
+    let events = parse_type_map();
+    (db_client, events)
+}
 
 pub fn random_interval<R: Rng>(rng: &mut R) -> [SystemTime; 2] {
     let mut range = [random_time(rng), random_time(rng)];

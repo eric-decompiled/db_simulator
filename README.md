@@ -27,7 +27,7 @@ The following values are supported for "type_mapping" fields:
 ## Notes
 All events are stored in a table `events`, which is indexed on (time, type), all other data is stored in `body` as JSONB. There is also a unique `fingerprint` column whose contents are derived from a  `sha256::digest` of the event before inserting it. 
 
-As a collision is unlikely there is a method `events::insert_fixed_event(db_client: &mut Client)` that can be called twice to validate the unique constraint.
+The few tests are integration style tests, they depend on having access to a DB and will insert events into it.
 
 ### `time`:
 `reader` queries for events within an interval, since `time` is powering our index it is stored in a dedicated SQL column and not the body. `timestamp` values are supported in the payload with different names, albeit they will be stored in rust secs + nanos since epoch format. All events will be assigned a `time` value even if its absent from the mapping. `time` will be sometime within the last week.
