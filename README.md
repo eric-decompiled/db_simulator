@@ -3,9 +3,12 @@
 - rust
 
 To run an emphemeral postgreSQL instance with docker you can use:
+`docker pull postgres`
 `docker run --rm --name dev-postgres -e POSTGRES_PASSWORD=topsecret -p 5432:5432 postgres`
 
 If you choose to use different settings either set `$DATABASE_URL`, or update the `.env` file with the connection string.
+
+When testing on a mac the app would erorr with `FATAL role postgres does not exist`. This was from trying to connect to a postgres installed by brew and not the docker container. `brew services stop postgresql` was able to resolve this issue.
 
 If you don't have rust installed, you can use [rustup](https://rustup.rs/) to get it.
 
